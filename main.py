@@ -5,6 +5,8 @@ from pathlib import Path
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+import google.generativeai as genai
+
 
 with open(os.path.join(Path(__file__).resolve().parent, 'keys.json')) as secrets_file:
     secrets = json.load(secrets_file)
@@ -19,6 +21,7 @@ def get_secret(key, json=secrets):
 
 TELEGRAM_KEY = get_secret('TELEGRAM_KEY')
 BOT_USERNAME = get_secret('BOT_USERNAME')
+GEMINI_KEY = get_secret('GEMINI_KEY')
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,15 +29,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def handle_response(text):
-    processed_text = text.lower()
-
-    if 'hello':
-        return 'Hi!'
-
-    elif 'hola':
-        return 'Hi in Spanish!!!'
-
-    return 'Im still learning'
+    print(f'User message: {text}')
+    response = model.generate_content(text)
+    print(f'response: {response.text}')
+    return response.text
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -60,6 +58,10 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == '__main__':
     print('STARTING BOT')
+
+    genai.configure(api_key=GEMINI_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+
     app = Application.builder().token(TELEGRAM_KEY).build()
 
     app.add_handler(CommandHandler('start', start_command))
