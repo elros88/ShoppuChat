@@ -7,6 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 import google.generativeai as genai
 
+import requests
 
 with open(os.path.join(Path(__file__).resolve().parent, 'keys.json')) as secrets_file:
     secrets = json.load(secrets_file)
@@ -56,8 +57,27 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pass
 
 
+def shoppu_login():
+    auth_data = {'username': get_secret('SHOPPU_USER'),
+                 'password': get_secret('SHOPPU_PASSWORD')}
+
+    return requests.post(get_secret('SHOPPU_URL'), json=auth_data).json()
+
+
+def get_shoppu_products(token):
+    r = requests.get(get_secret('SHOPPU_PRODUCTS'), headers={"Content-Type": "application/json",
+                                                             "Authorization": f'Token {token}'})
+    for product in r.json():
+        print(product['id'])
+
+
 if __name__ == '__main__':
     print('STARTING BOT')
+
+    login_json = shoppu_login()
+    shoppu_token = login_json["token"]
+
+    get_shoppu_products(shoppu_token)
 
     genai.configure(api_key=GEMINI_KEY)
     model = genai.GenerativeModel('gemini-pro')
